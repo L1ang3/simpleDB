@@ -1,10 +1,8 @@
 add_library(
-    db_disk
+    db_buffer
     OBJECT
-    disk_manager.cpp
-    page.cpp
-    tuple.cpp
-    page_guard.cpp
+    buffer_pool_manager.cpp
+    lru_k_replacer.cpp
     )
 
 set(ALL_OBJECT_FILES

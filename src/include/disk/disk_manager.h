@@ -13,12 +13,14 @@ class DiskManager {
   std::mutex latch_;
 
  public:
-  DiskManager(std::string& name);
+  DiskManager(const std::string& name);
 
   void ReadPage(page_id_t id, char* data);
 
   void WritePage(page_id_t id, char* data);
 
   auto GetFileSize() -> size_t;
+
+  void ShutDown();
 };
 }  // namespace spdb

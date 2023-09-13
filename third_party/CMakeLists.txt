@@ -1,3 +1,4 @@
+add_subdirectory(googletest)
 # 添加第三方库的源文件
 # file(GLOB SQLPARSER_SOURCES "./sql-parser/src/*.cpp")
 

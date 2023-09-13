@@ -1,7 +1,7 @@
 #include "disk/disk_manager.h"
 
 namespace spdb {
-DiskManager::DiskManager(std::string& name) {
+DiskManager::DiskManager(const std::string& name) {
   db_name_ = name;
   db_file_.open(db_name_, std::ios::binary | std::ios::in | std::ios::out);
   if (!db_file_.is_open()) {
