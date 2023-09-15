@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "buffer/buffer_pool_manager.h"
+#include "disk/tuple.h"
 using namespace spdb;
 using namespace std;
 

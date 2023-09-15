@@ -12,24 +12,44 @@ namespace spdb {
 
 class RID {
  private:
-  page_id_t pid_;
-  slot_id_t sid_;
+  page_id_t pid_{-1};
+  slot_id_t sid_{-1};
 
  public:
   explicit RID(page_id_t pid, slot_id_t sid) : pid_(pid), sid_(sid) {}
+
+  RID();
 
   auto GetPageId() const -> page_id_t { return pid_; }
   auto GetSlotId() const -> slot_id_t { return sid_; }
 };
 
-enum class CloumType { INVALID, INT, BOOL };
+enum class CloumType { INVALID, INT, BOOL, STRING };
+
+struct CloumAtr {
+  CloumType type_;
+  size_t size_;
+};
 
 class Cloum {
  public:
   std::string cloum_name_;
-  CloumType type_;
+  CloumAtr atr_;
 
-  explicit Cloum(std::string& name, CloumType type)
-      : cloum_name_(name), type_(type) {}
+  explicit Cloum(std::string& name, CloumAtr& atr)
+      : cloum_name_(name), atr_(atr) {}
+
+  auto virtual GetSize() const -> size_t { return atr_.size_; }
+
+  bool operator==(Cloum other) const {
+    return cloum_name_ == other.cloum_name_ && atr_.size_ == other.atr_.size_ &&
+           atr_.type_ == atr_.type_;
+  }
+
+  bool operator!=(Cloum other) const {
+    return !(cloum_name_ == other.cloum_name_ &&
+             atr_.size_ == other.atr_.size_ && atr_.type_ == atr_.type_);
+  }
 };
+
 }  // namespace spdb
