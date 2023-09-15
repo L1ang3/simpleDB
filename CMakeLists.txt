@@ -29,7 +29,7 @@ LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/third_party/sql-parser)
 add_subdirectory(src)
 
 # 添加测试目录
-# add_subdirectory(tests)
+add_subdirectory(tests)
 
 # 添加第三方库
 add_subdirectory(third_party)

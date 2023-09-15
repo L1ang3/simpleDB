@@ -50,4 +50,6 @@ void DiskManager::WritePage(page_id_t id, char* data) {
     db_file_.flush();
   }
 }
+
+void DiskManager::ShutDown() { db_file_.close(); }
 }  // namespace spdb

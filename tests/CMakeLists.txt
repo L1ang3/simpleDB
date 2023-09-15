@@ -8,7 +8,7 @@ include(GoogleTest)
 add_executable(buffer_pool_manager_test buffer_pool_manager_test.cpp)
 
 # 链接测试用例和被测试的模块
-target_link_libraries(buffer_pool_manager_test gtest gtest_main db_buffer)
+target_link_libraries(buffer_pool_manager_test gtest gtest_main db)
 
 # # 添加测试，指定测试目标
 # add_test(NAME my_unit_tests COMMAND unit_tests)
