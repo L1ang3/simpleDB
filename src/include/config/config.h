@@ -18,7 +18,7 @@ class RID {
  public:
   explicit RID(page_id_t pid, slot_id_t sid) : pid_(pid), sid_(sid) {}
 
-  RID();
+  RID() {}
 
   auto GetPageId() const -> page_id_t { return pid_; }
   auto GetSlotId() const -> slot_id_t { return sid_; }

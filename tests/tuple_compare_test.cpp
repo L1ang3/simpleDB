@@ -1,28 +1,34 @@
-#include <iostream>
-#include <memory>
+#include <cstdio>
+#include <cstring>
 #include <random>
 #include <string>
 #include <vector>
 
-#include "buffer/buffer_pool_manager.h"
 #include "config/config.h"
 #include "disk/tuple.h"
-using namespace spdb;
+#include "gtest/gtest.h"
 using namespace std;
 
-int main() {
+namespace spdb {
+TEST(TupleCompareTest, IntCompareTest) {
   srand(time(0));
   CloumAtr atr{CloumType::INT, 4};
-  const size_t size = 2;
+
+  const size_t size = 4;
   vector<Cloum> cols;
   cols.reserve(size);
   auto src = (char*)malloc(size * 4);
   size_t offset = 0;
+  vector<int> v1, v2;
+  v1.reserve(size);
+  v2.reserve(size);
+
   for (size_t i = 0; i < size; ++i) {
     string str = "";
     Cloum c{str, atr};
     cols.emplace_back(c);
     int tmp = random() % 2;
+    v1.emplace_back(tmp);
     memcpy(src + offset, &tmp, 4);
     offset += 4;
   }
@@ -35,21 +41,16 @@ int main() {
     Cloum c{str, atr};
     cols.emplace_back(c);
     int tmp = random() % 2;
+    v2.emplace_back(tmp);
     memcpy(src + offset, &tmp, 4);
     offset += 4;
   }
   Tuple t2(cols);
   t2.SetValues(src);
 
-  cout << "t1 t2\n";
-  for (size_t i = 0; i < size; ++i) {
-    cout << *t1.GetValueAtAs<int>(i) << ' ' << *t2.GetValueAtAs<int>(i) << '\n';
-  }
-  if (t1 < t2) {
-    cout << "t1<t2\n";
-  } else if (t1 > t2) {
-    cout << "t1>t2\n";
-  } else if (t1 == t2) {
-    cout << "t1==t2\n";
-  }
+  ASSERT_EQ(v1 < v2, t1 < t2);
+  ASSERT_EQ(v1 > v2, t1 > t2);
+  ASSERT_EQ(v1 == v2, t1 == t2);
+  free(src);
 }
+}  // namespace spdb

@@ -30,7 +30,7 @@ void Tuple::SetValues(const char* src) {
 
 void Tuple::SetRid(RID& rid) { rid_ = rid; }
 
-auto Tuple::GetValueAt(size_t index) const -> char* {
+auto Tuple::GetValueAt(int index) const -> char* {
   auto ret = (char*)malloc(cloums_[index].GetSize());
   size_t offset = 0;
   for (size_t i = 0; i < index; ++i) {
@@ -40,16 +40,7 @@ auto Tuple::GetValueAt(size_t index) const -> char* {
   return ret;
 }
 
-template <class T>
-auto Tuple::GetValueAtAs(size_t& index) const -> T* {
-  auto src = GetValueAt(index);
-  return reinterpret_cast<T*>(src);
-}
-
 bool Tuple::operator<(Tuple& other) {
-  if (this->cloums_ != other.cloums_) {
-    throw std::runtime_error("can not compare tuple with different type.");
-  }
   size_t offset = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     auto ret_a = (char*)malloc(cloums_[i].GetSize());
@@ -85,9 +76,6 @@ bool Tuple::operator<(Tuple& other) {
 }
 
 bool Tuple::operator>(Tuple& other) {
-  if (this->cloums_ != other.cloums_) {
-    throw std::runtime_error("can not compare tuple with different type.");
-  }
   size_t offset = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     auto ret_a = (char*)malloc(cloums_[i].GetSize());
@@ -123,10 +111,7 @@ bool Tuple::operator>(Tuple& other) {
 }
 
 bool Tuple::operator==(Tuple& other) {
-  if (this->cloums_ != other.cloums_) {
-    throw std::runtime_error("can not compare tuple with different type.");
-  }
-  size_t offset = 0;
+   size_t offset = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     auto ret_a = (char*)malloc(cloums_[i].GetSize());
     memcpy(ret_a, data_ + offset, cloums_[i].GetSize());
