@@ -1,3 +1,4 @@
+#pragma once
 namespace spdb {
 enum class PageType { Leaf, Internal };
 

@@ -39,7 +39,9 @@ class Cloum {
   explicit Cloum(std::string& name, CloumAtr& atr)
       : cloum_name_(name), atr_(atr) {}
 
-  auto virtual GetSize() const -> size_t { return atr_.size_; }
+  auto GetSize() const -> size_t { return atr_.size_; }
+
+  auto GetType() const -> CloumType { return atr_.type_; }
 
   bool operator==(Cloum other) const {
     return cloum_name_ == other.cloum_name_ && atr_.size_ == other.atr_.size_ &&
