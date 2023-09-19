@@ -22,14 +22,16 @@ class Tuple {
   void SetRid(RID&);
   auto GetValueAt(int) const -> char*;
 
+  auto GetData() const -> const char*;
+
   template <class T>
   auto GetValueAtAs(int index) const -> T* {
     auto src = GetValueAt(index);
     return reinterpret_cast<T*>(src);
   }
 
-  bool operator<(Tuple& other);
-  bool operator>(Tuple& other);
-  bool operator==(Tuple& other);
+  bool operator<(Tuple other) const;
+  bool operator>(Tuple other) const;
+  bool operator==(Tuple other) const;
 };
 }  // namespace spdb

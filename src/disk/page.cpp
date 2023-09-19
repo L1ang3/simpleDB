@@ -9,6 +9,8 @@ void Page::PinPage() { ++pin_count_; }
 
 auto Page::GetPinCount() const -> int { return pin_count_; }
 
+auto Page::GetPageId() -> page_id_t { return page_id_; }
+
 void Page::ResetMemory() { memset(data_, 0, PAGE_SIZE); }
 
 bool Page::IsDirty() { return is_dirty_; }

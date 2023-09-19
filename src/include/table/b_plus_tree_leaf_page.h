@@ -12,24 +12,18 @@
 
 namespace spdb {
 
-#define LEAF_PAGE_HEADER_SIZE 16
-
 /**
- * Store indexed key and record id(record id = page id combined with slot id,
- * see include/common/rid.h for detailed implementation) together within leaf
- * page. Only support unique key.
  *
  * Leaf page format (keys are stored in order):
  *  ----------------------------------------------------------------------
- * | HEADER | KEY(1) + RID(1) | KEY(2) + RID(2) | ... | KEY(n) + RID(n)
+ * | HEADER | KEY(1) + VAL(1) | KEY(2) + VAL(2) | ... | KEY(n) + VAL(n)
  *  ----------------------------------------------------------------------
  *
- *  Header format (size in byte, 16 bytes in total):
  *  ---------------------------------------------------------------------
- * | PageType (4) | CurrentSize (4) | MaxSize (4) |
+ * | PageType (4) | CurrentSize (4) | MaxSize (4) | KeySize (8) | ValueSize (8)
  *  ---------------------------------------------------------------------
  *  -----------------------------------------------
- * |  NextPageId (4)
+ * |  NextPageId (4) |
  *  -----------------------------------------------
  */
 
@@ -44,23 +38,31 @@ class BPlusTreeLeafPage : public BPlusTreePage {
    * method to set default values
    * @param max_size Max size of the leaf node
    */
-  void Init(int max_size);
+  void Init(int max_size, size_t key_size, size_t value_size);
 
   // helper methods
   auto GetNextPageId() const -> page_id_t;
   void SetNextPageId(page_id_t next_page_id);
-  auto KeyAt(int index) const -> Tuple;
-  auto ValueAt(int index) const -> Tuple;
+  auto KeyAt(int index, std::vector<Cloum> &key_type) const -> Tuple;
+  auto ValueAt(int index, std::vector<Cloum> &value_type) const -> Tuple;
+  void SetKeyAt(int index, const Tuple &key);
+  void SetValueAt(int index, const Tuple &value);
 
-  auto BinarySearch(const Tuple &key) const -> int;
+  auto BinarySearch(const Tuple &key, std::vector<Cloum> &key_type) const
+      -> int;
 
-  auto Insert(const Tuple &key, const Tuple &value) -> int;
+  auto Insert(const Tuple &key, const Tuple &value,
+              std::vector<Cloum> &key_type, std::vector<Cloum> &value_type)
+      -> int;
 
   auto Split(const Tuple &key, const Tuple &value, BufferPoolManager *bpm,
-             Tuple &key_to_insert, page_id_t &pid_to_insert) -> BasicPageGuard;
+             Tuple &key_to_insert, page_id_t &pid_to_insert,
+             std::vector<Cloum> &key_type, std::vector<Cloum> &value_type)
+      -> BasicPageGuard;
 
-  auto Delete(const Tuple &key, BufferPoolManager *bpm, bool have_father)
-      -> int;
+  auto Delete(const Tuple &key, std::vector<Cloum> &key_type,
+              std::vector<Cloum> &value_type, BufferPoolManager *bpm,
+              bool have_father) -> int;
 
  private:
   page_id_t next_page_id_;

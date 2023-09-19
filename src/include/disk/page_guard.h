@@ -1,4 +1,5 @@
 #pragma once
+#include "config/config.h"
 #include "disk/page.h"
 namespace spdb {
 class BufferPoolManager;

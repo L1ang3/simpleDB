@@ -40,7 +40,9 @@ auto Tuple::GetValueAt(int index) const -> char* {
   return ret;
 }
 
-bool Tuple::operator<(Tuple& other) {
+auto Tuple::GetData() const -> const char* { return data_; }
+
+bool Tuple::operator<(Tuple other) const {
   size_t offset = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     auto ret_a = (char*)malloc(cloums_[i].GetSize());
@@ -75,7 +77,7 @@ bool Tuple::operator<(Tuple& other) {
   return false;
 }
 
-bool Tuple::operator>(Tuple& other) {
+bool Tuple::operator>(Tuple other) const {
   size_t offset = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     auto ret_a = (char*)malloc(cloums_[i].GetSize());
@@ -110,8 +112,8 @@ bool Tuple::operator>(Tuple& other) {
   return false;
 }
 
-bool Tuple::operator==(Tuple& other) {
-   size_t offset = 0;
+bool Tuple::operator==(Tuple other) const {
+  size_t offset = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     auto ret_a = (char*)malloc(cloums_[i].GetSize());
     memcpy(ret_a, data_ + offset, cloums_[i].GetSize());

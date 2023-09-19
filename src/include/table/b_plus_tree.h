@@ -86,7 +86,7 @@ class BPlusTree {
   void RemoveFromFile(const std::string &file_name);
 
  private:
-  std::string index_name_;
+  std::string name_;
   BufferPoolManager *bpm_;
   int leaf_max_size_;
   int internal_max_size_;

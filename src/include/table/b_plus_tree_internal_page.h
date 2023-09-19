@@ -37,13 +37,14 @@ class BPlusTreeInternalPage : public BPlusTreePage {
    * BPlusTreeInternalPage
    * @param max_size Maximal size of the page
    */
-  void Init(int max_size);
+  void Init(int max_size, size_t key_size, size_t value_size);
 
   /**
    * @param index The index of the key to get. Index must be non-zero.
+   * @param key_type The type of the key.
    * @return Key at index
    */
-  auto KeyAt(int index) const -> Tuple;
+  auto KeyAt(int index, std::vector<Cloum> &key_type) const -> Tuple;
 
   /**
    *
@@ -52,7 +53,7 @@ class BPlusTreeInternalPage : public BPlusTreePage {
    */
   void SetKeyAt(int index, const Tuple &key);
 
-  void SetValueAt(int index, const page_id_t &value);
+  void SetValueAt(int index, page_id_t value);
 
   /**
    *
@@ -61,68 +62,18 @@ class BPlusTreeInternalPage : public BPlusTreePage {
    */
   auto ValueAt(int index) const -> page_id_t;
 
-  auto BinarySearch(const Tuple &key) const -> int {
-    // int l = 1;
-    // int r = GetSize() - 1;
-    // if (r == 0) {
-    //   return r;
-    // }
-    // int ret = 0;
+  auto BinarySearch(const Tuple &key, std::vector<Cloum> &key_type) const
+      -> int;
 
-    // while (true) {
-    //   int m = (l + r) / 2;
-    //   if (cmp(key, array_[m].first) == 1) {
-    //     if (m + 1 >= GetSize() || cmp(key, array_[m + 1].first) == -1) {
-    //       ret = m;
-    //       break;
-    //     }
-    //     l = m + 1;
-    //   } else if (cmp(key, array_[m].first) == -1) {
-    //     if (m - 1 <= 0 || cmp(key, array_[m - 1].first) == 1) {
-    //       ret = m - 1;
-    //       break;
-    //     }
-    //     r = m - 1;
-    //   } else {
-    //     ret = m;
-    //     break;
-    //   }
-    // }
-    // return ret;
-    return 0;
-  }
-
-  auto Insert(const Tuple &key, const page_id_t &value) -> int {
-    int ret = 1;
-
-    // if (GetSize() < GetMaxSize()) {
-    //   for (int i = GetSize() - 1; i >= 0; i--) {
-    //     if (i == 0) {
-    //       array_[i + 1].first = key;
-    //       array_[i + 1].second = value;
-    //       IncreaseSize(1);
-    //       break;
-    //     }
-
-    //     if (cmp(key, array_[i].first) == -1) {
-    //       array_[i + 1] = array_[i];
-    //     } else {
-    //       array_[i + 1].first = key;
-    //       array_[i + 1].second = value;
-    //       IncreaseSize(1);
-    //       break;
-    //     }
-    //   }
-    //   ret = 0;
-    // }
-    return ret;
-  }
+  auto Insert(const Tuple &key, const page_id_t &value,
+              std::vector<Cloum> &key_type) -> int;
 
   auto Split(const Tuple &key, const page_id_t &value, BufferPoolManager *bpm,
-             Tuple &key_to_insert, page_id_t &pid_to_insert) -> BasicPageGuard;
+             Tuple &key_to_insert, page_id_t &pid_to_insert,
+             std::vector<Cloum> &key_type) -> BasicPageGuard;
 
-  auto Delete(const Tuple &key, BufferPoolManager *bpm, bool have_father)
-      -> int;
+  auto Delete(const Tuple &key, BufferPoolManager *bpm, bool have_father,
+              std::vector<Cloum> &key_type) -> int;
 
  private:
   // Flexible array member for page data.

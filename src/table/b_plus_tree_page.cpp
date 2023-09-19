@@ -30,4 +30,11 @@ void BPlusTreePage::SetMaxSize(int size) { max_size_ = size; }
 auto BPlusTreePage::GetMinSize() const -> int {
   return IsLeafPage() ? max_size_ / 2 : max_size_ / 2 + max_size_ % 2;
 }
+
+auto BPlusTreePage::GetValueSize() const -> size_t { return value_size_; }
+void BPlusTreePage::SetValueSize(size_t value_size) {
+  value_size_ = value_size;
+}
+auto BPlusTreePage::GetKeySize() const -> size_t { return key_size_; }
+void BPlusTreePage::SetKeySize(size_t key_size) { key_size_ = key_size; }
 }  // namespace spdb

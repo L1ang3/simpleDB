@@ -36,7 +36,7 @@ class Cloum {
   std::string cloum_name_;
   CloumAtr atr_;
 
-  explicit Cloum(std::string& name, CloumAtr& atr)
+  explicit Cloum(std::string name, CloumAtr atr)
       : cloum_name_(name), atr_(atr) {}
 
   auto GetSize() const -> size_t { return atr_.size_; }
