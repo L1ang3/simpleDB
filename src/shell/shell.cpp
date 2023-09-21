@@ -20,4 +20,13 @@ int main() {
   vector<Cloum> key_type{v};
   vector<Cloum> value_type{v};
   BPlusTree bpt("test.db", pid, &bpm, key_type, value_type, 2, 3);
+
+  Tuple key(key_type);
+  Tuple value(value_type);
+  vector<int> keys{1, 2, 3, 4, 5};
+  for (auto i : keys) {
+    key.SetValues((char*)(&i));
+    value.SetValues((char*)(&i));
+    bpt.Insert(key, value);
+  }
 }

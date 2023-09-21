@@ -57,6 +57,7 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
   Page *new_page = &pages_[fid];
   new_page->pin_count_++;
   new_page->page_id_ = *page_id;
+  disk_manager_->WritePage(new_page->GetPageId(), new_page->GetData());
   new_page->is_dirty_ = false;
 
   // auto log = std::stringstream();

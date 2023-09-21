@@ -20,7 +20,7 @@ Tuple::Tuple(std::vector<Cloum>& cloums) {
 
 Tuple::~Tuple() { delete[] data_; }
 
-void Tuple::SetValues(const char* src) {
+void Tuple::SetValues(char* src) {
   size_t data_size = 0;
   for (size_t i = 0; i < cloums_.size(); ++i) {
     data_size += cloums_[i].GetSize();
@@ -41,6 +41,15 @@ auto Tuple::GetValueAt(int index) const -> char* {
 }
 
 auto Tuple::GetData() const -> const char* { return data_; }
+
+Tuple& Tuple::operator=(const Tuple& other) {
+  size_t data_size = 0;
+  for (auto& col : cloums_) {
+    data_size += col.GetSize();
+  }
+  memcpy(data_, other.data_, data_size);
+  return *this;
+}
 
 bool Tuple::operator<(Tuple other) const {
   size_t offset = 0;
