@@ -17,6 +17,7 @@ class Tuple {
  public:
   explicit Tuple(std::vector<Cloum>&);
   ~Tuple();
+  Tuple(const Tuple& other);
 
   void SetValues(char* src);
   void SetRid(RID&);
@@ -30,7 +31,7 @@ class Tuple {
     return reinterpret_cast<T*>(src);
   }
 
-  Tuple& operator=(const Tuple &);
+  Tuple& operator=(const Tuple&);
   bool operator<(Tuple other) const;
   bool operator>(Tuple other) const;
   bool operator==(Tuple other) const;

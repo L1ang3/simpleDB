@@ -26,7 +26,7 @@ namespace spdb {
  * |  NextPageId (4) |
  *  -----------------------------------------------
  */
-
+#define LEAF_HEADER_SIZE 32
 class BPlusTreeLeafPage : public BPlusTreePage {
  public:
   // Delete all constructor / destructor to ensure memory safety

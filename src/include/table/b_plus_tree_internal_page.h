@@ -11,7 +11,7 @@
 
 namespace spdb {
 
-#define INTERNAL_PAGE_HEADER_SIZE 12
+#define INTERNAL_HEADER_SIZE 28
 /**
  * Store n indexed keys and n+1 child pointers (page_id) within internal page.
  * Pointer PAGE_ID(i) points to a subtree in which all keys K satisfy:

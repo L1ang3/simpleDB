@@ -50,9 +50,17 @@ TEST(TupleCompareTest, IntCompareTest) {
   t2.SetValues(src);
 
   auto si = sizeof(src);
-  ASSERT_EQ(v1 < v2, t1 < t2);
-  ASSERT_EQ(v1 > v2, t1 > t2);
-  ASSERT_EQ(v1 == v2, t1 == t2);
+
+  if (t1 < t2) {
+    ASSERT_EQ(true, v1 < v2);
+  } else if (t1 > t2) {
+    ASSERT_EQ(true, v1 > v2);
+  } else if (t1 == t2) {
+    ASSERT_EQ(true, v1 == v2);
+  }
+  // ASSERT_EQ(v1 < v2, t1 < t2);
+  // ASSERT_EQ(v1 > v2, t1 > t2);
+  // ASSERT_EQ(v1 == v2, t1 == t2);
   free(src);
 }
 

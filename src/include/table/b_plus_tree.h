@@ -18,6 +18,64 @@
 #include "table/b_plus_tree_leaf_page.h"
 namespace spdb {
 
+class Iterator {
+ public:
+  Iterator() = default;
+  ~Iterator() = default;
+
+  explicit Iterator(BufferPoolManager *bpm, page_id_t pid, int index,
+                    std::vector<Cloum> key_type, std::vector<Cloum> value_type)
+      : bpm_(bpm),
+        pid_(pid),
+        index_(index),
+        key_type_(key_type),
+        value_type_(value_type) {}
+
+  auto IsEnd() -> bool { return pid_ == INVALID_PAGE_ID && index_ == -1; }
+
+  auto operator*() -> const std::pair<Tuple, Tuple> & {
+    auto leaf_page_guard = bpm_->FetchPageRead(pid_);
+    auto leaf_page = leaf_page_guard.As<BPlusTreeLeafPage>();
+    pair_ = std::make_shared<std::pair<Tuple, Tuple>>(
+        leaf_page->KeyAt(index_, key_type_),
+        leaf_page->ValueAt(index_, value_type_));
+    return *pair_;
+  }
+
+  auto operator++() -> Iterator & {
+    auto leaf_page_guard = bpm_->FetchPageRead(pid_);
+    auto leaf_page = leaf_page_guard.As<BPlusTreeLeafPage>();
+    ++index_;
+    if (index_ >= leaf_page->GetSize()) {
+      page_id_t next_id = leaf_page->GetNextPageId();
+      pid_ = next_id;
+      if (next_id != INVALID_PAGE_ID) {
+        index_ = 0;
+      } else {
+        index_ = -1;
+      }
+    }
+
+    return *this;
+  }
+
+  auto operator==(const Iterator &itr) const -> bool {
+    return (bpm_ == itr.bpm_ && pid_ == itr.pid_ && index_ == itr.index_);
+  }
+
+  auto operator!=(const Iterator &itr) const -> bool {
+    return !(bpm_ == itr.bpm_ && pid_ == itr.pid_ && index_ == itr.index_);
+  }
+
+ private:
+  BufferPoolManager *bpm_;
+  page_id_t pid_;
+  int index_;
+  std::shared_ptr<std::pair<Tuple, Tuple>> pair_;
+  std::vector<Cloum> key_type_;
+  std::vector<Cloum> value_type_;
+};
+
 /**
  * @brief Definition of the Context class.
  *
@@ -72,18 +130,11 @@ class BPlusTree {
   // Return the page id of the root node
   auto GetRootPageId() -> page_id_t;
 
-  // Index iterator
-  // auto Begin() -> INDEXITERATOR_TYPE;
+  auto Begin() -> Iterator;
 
-  // auto End() -> INDEXITERATOR_TYPE;
+  auto End() -> Iterator;
 
-  // auto Begin(const KeyType &key) -> INDEXITERATOR_TYPE;
-
-  // read data from file and insert one by one
-  void InsertFromFile(const std::string &file_name);
-
-  // read data from file and remove one by one
-  void RemoveFromFile(const std::string &file_name);
+  auto Begin(const Tuple &key) -> Iterator;
 
  private:
   std::string name_;

@@ -18,6 +18,16 @@ Tuple::Tuple(std::vector<Cloum>& cloums) {
   data_ = new char[data_size];
 }
 
+Tuple::Tuple(const Tuple& other) {
+  cloums_ = other.cloums_;
+  size_t data_size = 0;
+  for (auto& col : other.cloums_) {
+    data_size += col.GetSize();
+  }
+  data_ = new char[data_size];
+  memcpy(data_, other.data_, data_size);
+}
+
 Tuple::~Tuple() { delete[] data_; }
 
 void Tuple::SetValues(char* src) {

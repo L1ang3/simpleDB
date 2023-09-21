@@ -304,4 +304,85 @@ void BPlusTree::Remove(const Tuple &key) {
   }
 }
 
+auto BPlusTree::GetValue(const Tuple &key, Tuple &result) -> bool {
+  Context ctx(header_page_id_, bpm_);
+
+  page_id_t child_page_id = ctx.root_page_id_;
+  if (child_page_id == INVALID_PAGE_ID) {
+    return false;
+  }
+
+  auto page_guard = bpm_->FetchPageRead(child_page_id);
+  auto page = page_guard.As<BPlusTreePage>();
+  ctx.header_page_->Drop();
+  while (!page->IsLeafPage()) {
+    auto child_page = page_guard.As<BPlusTreeInternalPage>();
+
+    child_page_id =
+        child_page->ValueAt(child_page->BinarySearch(key, key_type_));
+    page_guard = bpm_->FetchPageRead(child_page_id);
+    page = page_guard.As<BPlusTreePage>();
+  }
+
+  auto leaf_page = page_guard.As<BPlusTreeLeafPage>();
+  int index = leaf_page->BinarySearch(key, key_type_);
+  if (index >= 0) {
+    result = leaf_page->ValueAt(index, value_type_);
+  } else {
+    return false;
+  }
+
+  return true;
+}
+
+auto BPlusTree::GetRootPageId() -> page_id_t {
+  auto header_page_guard = bpm_->FetchPageRead(header_page_id_);
+  return header_page_guard.As<BPlusTreeHeaderPage>()->root_page_id_;
+}
+
+auto BPlusTree::Begin() -> Iterator {
+  Context ctx(header_page_id_, bpm_);
+  ctx.header_page_->Drop();
+  if (ctx.root_page_id_ == INVALID_PAGE_ID) {
+    return Iterator(bpm_, INVALID_PAGE_ID, -1, key_type_, value_type_);
+  }
+  auto tmp_page_guard = bpm_->FetchPageRead(ctx.root_page_id_);
+  auto tmp_page = tmp_page_guard.As<BPlusTreePage>();
+  while (!tmp_page->IsLeafPage()) {
+    auto now_page = tmp_page_guard.As<BPlusTreeInternalPage>();
+
+    page_id_t child = now_page->ValueAt(0);
+
+    tmp_page_guard = bpm_->FetchPageRead(child);
+    tmp_page = tmp_page_guard.As<BPlusTreePage>();
+  }
+
+  return Iterator(bpm_, tmp_page_guard.PageId(), 0, key_type_, value_type_);
+}
+
+auto BPlusTree::End() -> Iterator {
+  return Iterator(bpm_, INVALID_PAGE_ID, -1, key_type_, value_type_);
+}
+
+auto BPlusTree::Begin(const Tuple &key) -> Iterator {
+  Context ctx(header_page_id_, bpm_);
+  ctx.header_page_->Drop();
+  if (ctx.root_page_id_ == INVALID_PAGE_ID) {
+    return Iterator(bpm_, INVALID_PAGE_ID, -1, key_type_, value_type_);
+  }
+  auto tmp_page_guard = bpm_->FetchPageRead(ctx.root_page_id_);
+  auto tmp_page = tmp_page_guard.As<BPlusTreePage>();
+  while (!tmp_page->IsLeafPage()) {
+    auto now_page = tmp_page_guard.As<BPlusTreeInternalPage>();
+    page_id_t child = now_page->ValueAt(now_page->BinarySearch(key, key_type_));
+
+    tmp_page_guard = bpm_->FetchPageRead(child);
+    tmp_page = tmp_page_guard.As<BPlusTreePage>();
+  }
+
+  auto leaf_page_guard = bpm_->FetchPageRead(tmp_page_guard.PageId());
+  auto leaf_page = leaf_page_guard.As<BPlusTreeLeafPage>();
+  int index = leaf_page->BinarySearch(key, key_type_);
+  return Iterator(bpm_, tmp_page_guard.PageId(), index, key_type_, value_type_);
+}
 }  // namespace spdb
