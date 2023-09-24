@@ -9,12 +9,11 @@ auto GetTypeSize(std::vector<Cloum> &type) -> size_t {
   return ret;
 }
 
-BPlusTree::BPlusTree(std::string name, page_id_t header_page_id,
+BPlusTree::BPlusTree(page_id_t header_page_id,
                      BufferPoolManager *buffer_pool_manager,
                      std::vector<Cloum> key_type, std::vector<Cloum> value_type,
                      int leaf_max_size, int internal_max_size)
-    : name_(std::move(name)),
-      bpm_(buffer_pool_manager),
+    : bpm_(buffer_pool_manager),
       leaf_max_size_(leaf_max_size),
       internal_max_size_(internal_max_size),
       header_page_id_(header_page_id),

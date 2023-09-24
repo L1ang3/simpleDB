@@ -8,7 +8,10 @@ namespace spdb {
 #define slot_id_t int32_t
 #define INVALID_PAGE_ID -1
 #define PAGE_SIZE 4096
+
+#define BUFFER_POOL_SIZE 50
 #define LRUK_REPLACER_K 5
+#define CATALOG_NAME "catalog.db"
 
 class RID {
  private:

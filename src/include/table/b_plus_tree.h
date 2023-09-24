@@ -110,7 +110,7 @@ class Context {
 
 class BPlusTree {
  public:
-  explicit BPlusTree(std::string name, page_id_t header_page_id,
+  explicit BPlusTree(page_id_t header_page_id,
                      BufferPoolManager *buffer_pool_manager,
                      std::vector<Cloum> key_type, std::vector<Cloum> value_type,
                      int leaf_max_size, int internal_max_size);
@@ -137,7 +137,6 @@ class BPlusTree {
   auto Begin(const Tuple &key) -> Iterator;
 
  private:
-  std::string name_;
   BufferPoolManager *bpm_;
   int leaf_max_size_;
   int internal_max_size_;
