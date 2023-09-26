@@ -27,7 +27,7 @@ class RID {
   auto GetSlotId() const -> slot_id_t { return sid_; }
 };
 
-enum class CloumType { INVALID, INT, BOOL, STRING };
+enum class CloumType { INVALID, INT, BOOL, CHAR };
 
 struct CloumAtr {
   CloumType type_;

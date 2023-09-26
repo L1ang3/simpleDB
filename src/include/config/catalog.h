@@ -175,6 +175,21 @@ class Catalog {
     return {};
   }
 
+  bool DropTable(std::string name) {
+    for (auto it = tables_.begin(); it != tables_.end(); ++it) {
+      if (it->disk_name_ == name) {
+        if (!std::remove(name.data()) == 0) {
+          return false;
+        } else {
+          tables_.erase(it);
+        }
+        break;
+      }
+    }
+    return true;
+  }
+  auto GetTables() -> std::vector<TableInfo> { return tables_; }
+
   bool IsExisted(std::string name) {
     for (auto &table : tables_) {
       if (table.disk_name_ == name) {

@@ -67,9 +67,9 @@ TEST(TupleCompareTest, IntCompareTest) {
 TEST(TupleCompareTest, StringCompareTest) {
   srand(time(0));
   string str = "";
-  CloumAtr ca1{CloumType::STRING, 7};
-  CloumAtr ca2{CloumType::STRING, 4};
-  CloumAtr ca3{CloumType::STRING, 6};
+  CloumAtr ca1{CloumType::CHAR, 7};
+  CloumAtr ca2{CloumType::CHAR, 4};
+  CloumAtr ca3{CloumType::CHAR, 6};
   Cloum c1{str, ca1};
   Cloum c2{str, ca1};
   Cloum c3{str, ca1};

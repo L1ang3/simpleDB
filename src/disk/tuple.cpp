@@ -79,7 +79,7 @@ bool Tuple::operator<(Tuple other) const {
           return false;
         }
         break;
-      case CloumType::STRING:
+      case CloumType::CHAR:
         if (strcmp(ret_a, ret_b) < 0) {
           return true;
         } else if (strcmp(ret_a, ret_b) > 0) {
@@ -114,7 +114,7 @@ bool Tuple::operator>(Tuple other) const {
           return false;
         }
         break;
-      case CloumType::STRING:
+      case CloumType::CHAR:
         if (strcmp(ret_a, ret_b) > 0) {
           return true;
         } else if (strcmp(ret_a, ret_b) < 0) {
@@ -147,7 +147,7 @@ bool Tuple::operator==(Tuple other) const {
           return false;
         }
         break;
-      case CloumType::STRING:
+      case CloumType::CHAR:
         if (strcmp(ret_a, ret_b) != 0) {
           return false;
         }
