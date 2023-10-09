@@ -10,6 +10,7 @@
 #include "config/catalog.h"
 #include "config/config.h"
 #include "disk/tuple.h"
+#include "executor/seq_scan_executor.h"
 #include "table/b_plus_tree.h"
 
 class TableWriter {
@@ -53,7 +54,9 @@ class TableWriter {
                 << std::setfill(' ') << headers_[i] << ' ';
     }
     std::cout << '|' << std::endl;
-    DrawLine();
+    if (rows_.size() != 0) {
+      DrawLine();
+    }
     for (size_t i = 0; i < rows_.size(); ++i) {
       for (size_t j = 0; j < headers_.size(); ++j) {
         std::cout << "| " << std::setw(max_[j]) << setiosflags(std::ios::left)
@@ -132,12 +135,14 @@ int main() {
       if (statement->isType(hsql::kStmtSelect)) {
         const auto* select =
             static_cast<const hsql::SelectStatement*>(statement);
-        auto ty = select->fromTable->type;
-        auto tb = select->fromTable->getName();
-        auto l = select->selectList;
-        if (select->fromTable->hasSchema()) {
-          auto sc = select->fromTable->schema;
-        } else {
+
+        for (auto& c : *select->selectList) {
+          auto p = c->getName();
+
+          std::cout << p << std::endl;
+        }
+        for (auto col : *select->fromTable->alias->columns) {
+          std::cout << col << std::endl;
         }
       } else if (statement->isType(hsql::kStmtCreate)) {
         const auto* create =

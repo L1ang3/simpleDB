@@ -40,6 +40,8 @@ void Tuple::SetValues(char* src) {
 
 void Tuple::SetRid(RID& rid) { rid_ = rid; }
 
+auto Tuple::GetRid() const -> RID { return rid_; }
+
 auto Tuple::GetValueAt(int index) const -> char* {
   auto ret = (char*)malloc(cloums_[index].GetSize());
   size_t offset = 0;

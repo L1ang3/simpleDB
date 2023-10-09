@@ -6,5 +6,5 @@ add_library(
     )
 
 set(ALL_OBJECT_FILES
-    ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:db_disk>
+    ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:db_buffer>
     PARENT_SCOPE)

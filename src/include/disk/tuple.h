@@ -21,6 +21,7 @@ class Tuple {
 
   void SetValues(char* src);
   void SetRid(RID&);
+  auto GetRid() const -> RID;
   auto GetValueAt(int) const -> char*;
 
   auto GetData() const -> const char*;

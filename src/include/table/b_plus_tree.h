@@ -39,6 +39,8 @@ class Iterator {
     pair_ = std::make_shared<std::pair<Tuple, Tuple>>(
         leaf_page->KeyAt(index_, key_type_),
         leaf_page->ValueAt(index_, value_type_));
+    RID rid{pid_, index_};
+    pair_->second.SetRid(rid);
     return *pair_;
   }
 
