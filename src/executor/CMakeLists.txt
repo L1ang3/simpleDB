@@ -2,6 +2,7 @@ add_library(
     db_executor
     OBJECT
     seq_scan_executor.cpp
+    value_executor.cpp
     )
 
 set(ALL_OBJECT_FILES

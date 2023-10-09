@@ -139,11 +139,9 @@ int main() {
         for (auto& c : *select->selectList) {
           auto p = c->getName();
 
-          std::cout << p << std::endl;
+          std::cout << c->ival << std::endl;
         }
-        for (auto col : *select->fromTable->alias->columns) {
-          std::cout << col << std::endl;
-        }
+        auto table = *select;
       } else if (statement->isType(hsql::kStmtCreate)) {
         const auto* create =
             static_cast<const hsql::CreateStatement*>(statement);
