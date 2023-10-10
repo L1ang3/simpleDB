@@ -92,15 +92,12 @@ void LookupHelper(BPlusTree *tree, const std::vector<int32_t> &keys,
 TEST(BPlusTreeConcurrentTest, InsertTest1) {
   auto disk = DiskManager("b_plus_tree_test_disk");
   auto *bpm = new BufferPoolManager(50, &disk);
-  // create and fetch header_page
-  page_id_t page_id;
-  auto header_page = bpm->NewPage(&page_id);
   auto tmp = sizeof(size_t);
   // create b+ tree
   Cloum c{"value", {CloumType::INT, 4}};
   std::vector<Cloum> type{c};
   Tuple index_key(type);
-  BPlusTree tree(header_page->GetPageId(), bpm, type, type, 2, 3);
+  BPlusTree tree(bpm, type, type, 2, 3);
   // keys to Insert
   std::vector<int32_t> keys;
   int64_t scale_factor = 300;
@@ -127,17 +124,12 @@ TEST(BPlusTreeConcurrentTest, InsertTest1) {
   }
 
   EXPECT_EQ(current_key, keys.size() + 1);
-
-  bpm->UnpinPage(page_id, true);
   delete bpm;
 }
 
 TEST(BPlusTreeConcurrentTest, InsertTest2) {
   auto disk = DiskManager("b_plus_tree_test_disk");
   auto *bpm = new BufferPoolManager(50, &disk);
-  // create and fetch header_page
-  page_id_t page_id;
-  auto header_page = bpm->NewPage(&page_id);
   // create b+ tree
   Cloum c{"value", {CloumType::INT, 4}};
   std::vector<Cloum> type{c};
@@ -145,8 +137,7 @@ TEST(BPlusTreeConcurrentTest, InsertTest2) {
   int leaf_max_size = (PAGE_SIZE - LEAF_HEADER_SIZE) / (type[0].GetSize() * 2);
   int internal_max_size =
       (PAGE_SIZE - INTERNAL_HEADER_SIZE) / (type[0].GetSize() * 2);
-  BPlusTree tree(header_page->GetPageId(), bpm, type, type, leaf_max_size,
-                 internal_max_size);
+  BPlusTree tree(bpm, type, type, leaf_max_size, internal_max_size);
   // keys to Insert
   std::vector<int32_t> keys;
   int32_t scale_factor = 10000;
@@ -174,7 +165,6 @@ TEST(BPlusTreeConcurrentTest, InsertTest2) {
 
   EXPECT_EQ(current_key, keys.size() + 1);
 
-  bpm->UnpinPage(page_id, true);
   delete bpm;
 }
 
@@ -192,8 +182,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   int leaf_max_size = (PAGE_SIZE - LEAF_HEADER_SIZE) / (type[0].GetSize() * 2);
   int internal_max_size =
       (PAGE_SIZE - INTERNAL_HEADER_SIZE) / (type[0].GetSize() * 2);
-  BPlusTree tree(header_page->GetPageId(), bpm, type, type, leaf_max_size,
-                 internal_max_size);
+  BPlusTree tree(bpm, type, type, leaf_max_size, internal_max_size);
   // sequential insert
   std::vector<int32_t> keys = {1, 2, 3, 4, 5};
   InsertHelper(&tree, keys);
@@ -212,8 +201,6 @@ TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   }
 
   EXPECT_EQ(size, 1);
-
-  bpm->UnpinPage(page_id, true);
   delete bpm;
 }
 
@@ -230,8 +217,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   int leaf_max_size = (PAGE_SIZE - LEAF_HEADER_SIZE) / (type[0].GetSize() * 2);
   int internal_max_size =
       (PAGE_SIZE - INTERNAL_HEADER_SIZE) / (type[0].GetSize() * 2);
-  BPlusTree tree(header_page->GetPageId(), bpm, type, type, leaf_max_size,
-                 internal_max_size);
+  BPlusTree tree(bpm, type, type, leaf_max_size, internal_max_size);
   // sequential insert
   std::vector<int32_t> keys = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   InsertHelper(&tree, keys);
@@ -252,8 +238,6 @@ TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   }
 
   EXPECT_EQ(size, 4);
-
-  bpm->UnpinPage(page_id, true);
   delete bpm;
 }
 
@@ -270,8 +254,7 @@ TEST(BPlusTreeConcurrentTest, MixTest1) {
   int leaf_max_size = (PAGE_SIZE - LEAF_HEADER_SIZE) / (type[0].GetSize() * 2);
   int internal_max_size =
       (PAGE_SIZE - INTERNAL_HEADER_SIZE) / (type[0].GetSize() * 2);
-  BPlusTree tree(header_page->GetPageId(), bpm, type, type, leaf_max_size,
-                 internal_max_size);
+  BPlusTree tree(bpm, type, type, leaf_max_size, internal_max_size);
   // first, populate index
   std::vector<int32_t> keys = {1, 2, 3, 4, 5};
   InsertHelper(&tree, keys);
@@ -295,8 +278,6 @@ TEST(BPlusTreeConcurrentTest, MixTest1) {
   }
 
   EXPECT_EQ(size, 5);
-
-  bpm->UnpinPage(page_id, true);
   delete bpm;
 }
 
@@ -313,8 +294,7 @@ TEST(BPlusTreeConcurrentTest, MixTest2) {
   int leaf_max_size = (PAGE_SIZE - LEAF_HEADER_SIZE) / (type[0].GetSize() * 2);
   int internal_max_size =
       (PAGE_SIZE - INTERNAL_HEADER_SIZE) / (type[0].GetSize() * 2);
-  BPlusTree tree(header_page->GetPageId(), bpm, type, type, leaf_max_size,
-                 internal_max_size);
+  BPlusTree tree(bpm, type, type, leaf_max_size, internal_max_size);
 
   // Add perserved_keys
   std::vector<int32_t> perserved_keys;
@@ -360,8 +340,6 @@ TEST(BPlusTreeConcurrentTest, MixTest2) {
   }
 
   ASSERT_EQ(size, perserved_keys.size());
-
-  bpm->UnpinPage(page_id, true);
   delete bpm;
 }
 

@@ -9,43 +9,39 @@ auto GetTypeSize(std::vector<Cloum> &type) -> size_t {
   return ret;
 }
 
-BPlusTree::BPlusTree(page_id_t header_page_id,
-                     BufferPoolManager *buffer_pool_manager,
+BPlusTree::BPlusTree(BufferPoolManager *buffer_pool_manager,
                      std::vector<Cloum> key_type, std::vector<Cloum> value_type,
-                     int leaf_max_size, int internal_max_size)
+                     int leaf_max_size, int internal_max_size,
+                     page_id_t root_page_id)
     : bpm_(buffer_pool_manager),
       leaf_max_size_(leaf_max_size),
       internal_max_size_(internal_max_size),
-      header_page_id_(header_page_id),
+      root_page_id_(root_page_id),
       key_type_(key_type),
-      value_type_(value_type) {
-  WritePageGuard guard = bpm_->FetchPageWrite(header_page_id_);
-  auto root_page = guard.AsMut<BPlusTreeHeaderPage>();
-  root_page->root_page_id_ = INVALID_PAGE_ID;
-}
+      value_type_(value_type) {}
 
-auto BPlusTree::IsEmpty() const -> bool {
-  ReadPageGuard guard = bpm_->FetchPageRead(header_page_id_);
-  return guard.As<BPlusTreeHeaderPage>()->root_page_id_ == INVALID_PAGE_ID;
+auto BPlusTree::IsEmpty() -> bool {
+  std::lock_guard<std::mutex> l(root_latch_);
+  return root_page_id_ == INVALID_PAGE_ID;
 }
 
 auto BPlusTree::Insert(const Tuple &key, const Tuple &value) -> bool {
-  Context ctx(header_page_id_, bpm_);
-
+  Context ctx;
+  std::lock_guard<std::mutex> l(root_latch_);
   Tuple key_to_insert(key_type_);
   page_id_t pid_to_insert;
-  if (ctx.root_page_id_ == INVALID_PAGE_ID) {
+  if (root_page_id_ == INVALID_PAGE_ID) {
     page_id_t root_id;
     auto root_page_guard = bpm_->NewPageGuarded(&root_id);
     auto root_page = root_page_guard.AsMut<BPlusTreeLeafPage>();
     root_page->Init(leaf_max_size_, GetTypeSize(key_type_),
                     GetTypeSize(value_type_));
     root_page->Insert(key, value, key_type_, value_type_);
-    ctx.header_page_->AsMut<BPlusTreeHeaderPage>()->root_page_id_ = root_id;
+    root_page_id_ = root_id;
     return true;
   }
 
-  auto tmp_page_guard = bpm_->FetchPageWrite(ctx.root_page_id_);
+  auto tmp_page_guard = bpm_->FetchPageWrite(root_page_id_);
   auto tmp_page = tmp_page_guard.As<BPlusTreePage>();
   while (!tmp_page->IsLeafPage()) {
     auto now_page = tmp_page_guard.As<BPlusTreeInternalPage>();
@@ -56,9 +52,6 @@ auto BPlusTree::Insert(const Tuple &key, const Tuple &value) -> bool {
     tmp_page = tmp_page_guard.As<BPlusTreePage>();
     if (tmp_page->GetSize() != tmp_page->GetMaxSize()) {
       ctx.write_set_.clear();
-      if (ctx.header_page_ != std::nullopt) {
-        ctx.header_page_->Drop();
-      }
     }
   }
 
@@ -82,7 +75,7 @@ auto BPlusTree::Insert(const Tuple &key, const Tuple &value) -> bool {
       new_root_page->SetValueAt(0, tmp_page_guard.PageId());
       new_root_page->IncreaseSize(1);
       new_root_page->Insert(key_insert, pid_insert, key_type_);
-      ctx.header_page_->AsMut<BPlusTreeHeaderPage>()->root_page_id_ = root_id;
+      root_page_id_ = root_id;
       return true;
     }
   } else if (is_split == -1) {
@@ -99,7 +92,7 @@ auto BPlusTree::Insert(const Tuple &key, const Tuple &value) -> bool {
       new_root_page->SetValueAt(0, tmp_page_guard.PageId());
       new_root_page->IncreaseSize(1);
       new_root_page->Insert(key_insert, pid_insert, key_type_);
-      ctx.header_page_->AsMut<BPlusTreeHeaderPage>()->root_page_id_ = root_id;
+      root_page_id_ = root_id;
       break;
     }
     father_page_guard = std::move(ctx.write_set_.back());
@@ -120,14 +113,14 @@ auto BPlusTree::Insert(const Tuple &key, const Tuple &value) -> bool {
 }
 
 void BPlusTree::Remove(const Tuple &key) {
-  Context ctx(header_page_id_, bpm_);
-
-  if (ctx.root_page_id_ == INVALID_PAGE_ID) {
+  Context ctx;
+  std::lock_guard<std::mutex> l(root_latch_);
+  if (root_page_id_ == INVALID_PAGE_ID) {
     return;
   }
 
   // find the target leaf page
-  auto tmp_page_guard = bpm_->FetchPageWrite(ctx.root_page_id_);
+  auto tmp_page_guard = bpm_->FetchPageWrite(root_page_id_);
   auto tmp_page = tmp_page_guard.As<BPlusTreePage>();
   while (!tmp_page->IsLeafPage()) {
     auto now_page = tmp_page_guard.As<BPlusTreeInternalPage>();
@@ -139,15 +132,15 @@ void BPlusTree::Remove(const Tuple &key) {
     tmp_page = tmp_page_guard.As<BPlusTreePage>();
     if (tmp_page->GetSize() > tmp_page->GetMinSize()) {
       ctx.write_set_.clear();
-      if (ctx.header_page_ != std::nullopt) {
-        ctx.header_page_->Drop();
-      }
+      // if (ctx.header_page_ != std::nullopt) {
+      //   ctx.header_page_->Drop();
+      // }
     }
   }
 
   // get its father page
   auto leaf_page = tmp_page_guard.AsMut<BPlusTreeLeafPage>();
-  bool have_father = !ctx.IsRootPage(tmp_page_guard.PageId());
+  bool have_father = (tmp_page_guard.PageId() != root_page_id_);
   WritePageGuard father_page_guard;
   if (!ctx.write_set_.empty()) {
     father_page_guard = std::move(ctx.write_set_.back());
@@ -213,16 +206,15 @@ void BPlusTree::Remove(const Tuple &key) {
     }
 
   } else if (is_borrow == -1) {
-    bpm_->DeletePage(ctx.root_page_id_);
-    ctx.header_page_->AsMut<BPlusTreeHeaderPage>()->root_page_id_ =
-        INVALID_PAGE_ID;
+    bpm_->DeletePage(root_page_id_);
+    root_page_id_ = INVALID_PAGE_ID;
 
     return;
   }
 
   while (is_borrow != 0) {
     tmp_page_guard = std::move(father_page_guard);
-    have_father = !ctx.IsRootPage(tmp_page_guard.PageId());
+    have_father = (tmp_page_guard.PageId() != root_page_id_);
     if (!ctx.write_set_.empty()) {
       father_page_guard = std::move(ctx.write_set_.back());
       ctx.write_set_.pop_back();
@@ -232,8 +224,7 @@ void BPlusTree::Remove(const Tuple &key) {
           child_page->Delete(child_page->KeyAt(index_to_delete, key_type_),
                              bpm_, false, key_type_);
       if (is_borrow == -1) {
-        ctx.header_page_->AsMut<BPlusTreeHeaderPage>()->root_page_id_ =
-            child_page->ValueAt(0);
+        root_page_id_ = child_page->ValueAt(0);
       }
       return;
     }
@@ -304,16 +295,15 @@ void BPlusTree::Remove(const Tuple &key) {
 }
 
 auto BPlusTree::GetValue(const Tuple &key, Tuple &result) -> bool {
-  Context ctx(header_page_id_, bpm_);
-
-  page_id_t child_page_id = ctx.root_page_id_;
+  Context ctx;
+  std::lock_guard<std::mutex> l(root_latch_);
+  page_id_t child_page_id = root_page_id_;
   if (child_page_id == INVALID_PAGE_ID) {
     return false;
   }
 
   auto page_guard = bpm_->FetchPageRead(child_page_id);
   auto page = page_guard.As<BPlusTreePage>();
-  ctx.header_page_->Drop();
   while (!page->IsLeafPage()) {
     auto child_page = page_guard.As<BPlusTreeInternalPage>();
 
@@ -335,17 +325,17 @@ auto BPlusTree::GetValue(const Tuple &key, Tuple &result) -> bool {
 }
 
 auto BPlusTree::GetRootPageId() -> page_id_t {
-  auto header_page_guard = bpm_->FetchPageRead(header_page_id_);
-  return header_page_guard.As<BPlusTreeHeaderPage>()->root_page_id_;
+  std::lock_guard<std::mutex> l(root_latch_);
+  return root_page_id_;
 }
 
 auto BPlusTree::Begin() -> Iterator {
-  Context ctx(header_page_id_, bpm_);
-  ctx.header_page_->Drop();
-  if (ctx.root_page_id_ == INVALID_PAGE_ID) {
+  std::lock_guard<std::mutex> l(root_latch_);
+  Context ctx;
+  if (root_page_id_ == INVALID_PAGE_ID) {
     return Iterator(bpm_, INVALID_PAGE_ID, -1, key_type_, value_type_);
   }
-  auto tmp_page_guard = bpm_->FetchPageRead(ctx.root_page_id_);
+  auto tmp_page_guard = bpm_->FetchPageRead(root_page_id_);
   auto tmp_page = tmp_page_guard.As<BPlusTreePage>();
   while (!tmp_page->IsLeafPage()) {
     auto now_page = tmp_page_guard.As<BPlusTreeInternalPage>();
@@ -360,16 +350,17 @@ auto BPlusTree::Begin() -> Iterator {
 }
 
 auto BPlusTree::End() -> Iterator {
+  std::lock_guard<std::mutex> l(root_latch_);
   return Iterator(bpm_, INVALID_PAGE_ID, -1, key_type_, value_type_);
 }
 
 auto BPlusTree::Begin(const Tuple &key) -> Iterator {
-  Context ctx(header_page_id_, bpm_);
-  ctx.header_page_->Drop();
-  if (ctx.root_page_id_ == INVALID_PAGE_ID) {
+  std::lock_guard<std::mutex> l(root_latch_);
+  Context ctx;
+  if (root_page_id_ == INVALID_PAGE_ID) {
     return Iterator(bpm_, INVALID_PAGE_ID, -1, key_type_, value_type_);
   }
-  auto tmp_page_guard = bpm_->FetchPageRead(ctx.root_page_id_);
+  auto tmp_page_guard = bpm_->FetchPageRead(root_page_id_);
   auto tmp_page = tmp_page_guard.As<BPlusTreePage>();
   while (!tmp_page->IsLeafPage()) {
     auto now_page = tmp_page_guard.As<BPlusTreeInternalPage>();

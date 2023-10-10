@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <mutex>
 #include <optional>
 #include <queue>
 #include <shared_mutex>
@@ -86,39 +87,24 @@ class Iterator {
  */
 class Context {
  public:
-  Context(page_id_t pid, BufferPoolManager *bpm) {
-    header_page_ = std::make_optional(bpm->FetchPageWrite(pid));
-    root_page_id_ = header_page_->AsMut<BPlusTreeHeaderPage>()->root_page_id_;
-  }
-  // When you insert into / remove from the B+ tree, store the write guard of
-  // header page here. Remember to drop the header page guard and set it to
-  // nullopt when you want to unlock all.
-  std::optional<WritePageGuard> header_page_{std::nullopt};
-
-  // Save the root page id here so that it's easier to know if the current page
-  // is the root page.
-  page_id_t root_page_id_{INVALID_PAGE_ID};
+  Context() {}
 
   // Store the write guards of the pages that you're modifying here.
   std::deque<WritePageGuard> write_set_;
 
   // You may want to use this when getting value, but not necessary.
   std::deque<ReadPageGuard> read_set_;
-
-  auto IsRootPage(page_id_t page_id) -> bool {
-    return page_id == root_page_id_;
-  }
 };
 
 class BPlusTree {
  public:
-  explicit BPlusTree(page_id_t header_page_id,
-                     BufferPoolManager *buffer_pool_manager,
+  explicit BPlusTree(BufferPoolManager *buffer_pool_manager,
                      std::vector<Cloum> key_type, std::vector<Cloum> value_type,
-                     int leaf_max_size, int internal_max_size);
+                     int leaf_max_size, int internal_max_size,
+                     page_id_t root_page_id = INVALID_PAGE_ID);
 
   // Returns true if this B+ tree has no keys and values.
-  auto IsEmpty() const -> bool;
+  auto IsEmpty() -> bool;
 
   // Insert a key-value pair into this B+ tree.
   auto Insert(const Tuple &key, const Tuple &value) -> bool;
@@ -142,7 +128,8 @@ class BPlusTree {
   BufferPoolManager *bpm_;
   int leaf_max_size_;
   int internal_max_size_;
-  page_id_t header_page_id_;
+  page_id_t root_page_id_;
+  std::mutex root_latch_;
   std::vector<Cloum> key_type_;
   std::vector<Cloum> value_type_;
 };

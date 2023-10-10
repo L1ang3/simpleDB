@@ -11,6 +11,7 @@
 #include "config/config.h"
 #include "disk/tuple.h"
 #include "executor/seq_scan_executor.h"
+#include "executor/value_executor.h"
 #include "table/b_plus_tree.h"
 
 class TableWriter {
@@ -135,13 +136,96 @@ int main() {
       if (statement->isType(hsql::kStmtSelect)) {
         const auto* select =
             static_cast<const hsql::SelectStatement*>(statement);
-
-        for (auto& c : *select->selectList) {
-          auto p = c->getName();
-
-          std::cout << c->ival << std::endl;
+        if (!catalog.IsExisted(select->fromTable->getName())) {
+          std::cerr << "table is not existed." << std::endl;
+          continue;
         }
-        auto table = *select;
+        spdb::SeqScanExecutor seq_executor(&catalog, statement);
+
+        TableWriter writer;
+        std::vector<std::string> header;
+        auto table_info = catalog.GetTable(select->fromTable->getName());
+        for (auto& c : table_info.value_type_) {
+          header.push_back(c.cloum_name_);
+        }
+        writer.AddHeader(header);
+
+        spdb::Tuple tuple{table_info.value_type_};
+        spdb::RID rid{};
+        while (seq_executor.Next(&tuple, &rid)) {
+          std::vector<std::string> row{};
+          std::string str{};
+          for (size_t i = 0; i < table_info.value_type_.size(); ++i) {
+            switch (table_info.value_type_[i].GetType()) {
+              case spdb::CloumType::INT:
+                row.push_back(std::to_string(*tuple.GetValueAtAs<int>(i)));
+                break;
+              case spdb::CloumType::CHAR:
+                str = tuple.GetValueAt(i);
+                row.push_back(str);
+                break;
+              default:
+                break;
+            }
+          }
+          writer.AddRow(row);
+        }
+        writer.DrawTable();
+
+      } else if (statement->isType(hsql::kStmtInsert)) {
+        auto insert = static_cast<const hsql::InsertStatement*>(statement);
+        if (!catalog.IsExisted(insert->tableName)) {
+          std::cerr << "table is not existed." << std::endl;
+          continue;
+        }
+        auto table_info = catalog.GetTable(insert->tableName);
+        spdb::DiskManager disk(table_info.disk_name_);
+        spdb::BufferPoolManager bpm(BUFFER_POOL_SIZE, &disk);
+        spdb::BPlusTree tree(&bpm, table_info.key_type_, table_info.value_type_,
+                             table_info.leaf_max_size_,
+                             table_info.internal_max_size_,
+                             table_info.root_id_);
+
+        bool ismatch = 1;
+        if (table_info.value_type_.size() == insert->values->size()) {
+          for (size_t i = 0; i < insert->values->size(); ++i) {
+            switch (table_info.value_type_[i].GetType()) {
+              case spdb::CloumType::INT:
+                if (insert->values->at(i)->fval != 0 ||
+                    insert->values->at(i)->getName() != nullptr) {
+                  ismatch = 0;
+                }
+                break;
+              case spdb::CloumType::CHAR:
+                if (insert->values->at(i)->getName() == nullptr) {
+                  ismatch = 0;
+                }
+                break;
+
+              default:
+                break;
+            }
+          }
+        } else {
+          ismatch = 0;
+        }
+
+        if (!ismatch) {
+          std::cerr << "values are not matched the values of table."
+                    << std::endl;
+          continue;
+        }
+
+        spdb::ValueExecutor value_executor(&catalog, statement);
+        spdb::Tuple tuple{table_info.value_type_};
+        spdb::RID rid{};
+        while (value_executor.Next(&tuple, &rid)) {
+          auto i = *tuple.GetValueAtAs<int>(0);
+          auto s = tuple.GetValueAt(1);
+          tree.Insert(tuple, tuple);
+          catalog.ModifyTableRoot(table_info.disk_name_, tree.GetRootPageId());
+        }
+
       } else if (statement->isType(hsql::kStmtCreate)) {
         const auto* create =
             static_cast<const hsql::CreateStatement*>(statement);

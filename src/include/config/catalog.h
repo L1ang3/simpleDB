@@ -11,7 +11,7 @@ class TableInfo {
   std::string disk_name_;
   std::vector<Cloum> key_type_;
   std::vector<Cloum> value_type_;
-  page_id_t header_id_;
+  page_id_t root_id_;
   int leaf_max_size_;
   int internal_max_size_;
 };
@@ -132,7 +132,7 @@ class Catalog {
                          sizeof(CloumAtr));
       }
 
-      catal_file.write((char *)&tables_[i].header_id_, sizeof(page_id_t));
+      catal_file.write((char *)&tables_[i].root_id_, sizeof(page_id_t));
       catal_file.write((char *)&tables_[i].leaf_max_size_, sizeof(int));
       catal_file.write((char *)&tables_[i].internal_max_size_, sizeof(int));
     }
@@ -148,8 +148,6 @@ class Catalog {
     auto disk = DiskManager(name);
     // create and fetch header_page
     BufferPoolManager bpm(5, &disk);
-    page_id_t page_id;
-    auto header_page = bpm.NewPageGuarded(&page_id);
     // create b+ tree
     size_t kv_size = 0;
     for (auto &col : key_type) {
@@ -161,9 +159,11 @@ class Catalog {
 
     int leaf_max_size = (PAGE_SIZE - LEAF_HEADER_SIZE) / kv_size;
     int internal_max_size = (PAGE_SIZE - INTERNAL_HEADER_SIZE) / kv_size;
-    TableInfo table{name,    key_type,      value_type,
-                    page_id, leaf_max_size, internal_max_size};
+    TableInfo table{name,          key_type,
+                    value_type,    INVALID_PAGE_ID,
+                    leaf_max_size, internal_max_size};
     tables_.push_back(table);
+    BPlusTree(&bpm, key_type, value_type, leaf_max_size, internal_max_size);
     return true;
   }
   TableInfo GetTable(std::string name) {
@@ -173,6 +173,15 @@ class Catalog {
       }
     }
     return {};
+  }
+
+  void ModifyTableRoot(std::string name, page_id_t root_id) {
+    for (auto &table : tables_) {
+      if (table.disk_name_ == name) {
+        table.root_id_ = root_id;
+        break;
+      }
+    }
   }
 
   bool DropTable(std::string name) {

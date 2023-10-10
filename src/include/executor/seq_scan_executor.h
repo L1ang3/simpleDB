@@ -11,7 +11,7 @@ namespace spdb {
  */
 class SeqScanExecutor : public AbstractExecutor {
  public:
-  SeqScanExecutor(Catalog *catalog, hsql::SQLStatement *);
+  SeqScanExecutor(Catalog *catalog, const hsql::SQLStatement *);
 
   ~SeqScanExecutor();
 

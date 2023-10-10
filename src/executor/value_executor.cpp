@@ -1,7 +1,7 @@
 #include "executor/value_executor.h"
 
 namespace spdb {
-ValueExecutor::ValueExecutor(Catalog *catalog, hsql::SQLStatement *state)
+ValueExecutor::ValueExecutor(Catalog *catalog, const hsql::SQLStatement *state)
     : AbstractExecutor(catalog) {
   if (!state->isType(hsql::StatementType::kStmtInsert)) {
     throw std::runtime_error(
@@ -19,17 +19,17 @@ ValueExecutor::ValueExecutor(Catalog *catalog, hsql::SQLStatement *state)
     value_size += c.GetSize();
   }
   auto src = (char *)malloc(value_size);
-  memset(src, 0, value_size);
+  memset(src, '\0', value_size);
   size_t offset = 0;
   for (size_t i = 0; i < table_info.value_type_.size(); ++i) {
-    switch (insert->values->at(i)->columnType.data_type) {
-      case hsql::DataType::CHAR:
-        memcpy(src + offset, insert->columns->at(i),
-               insert->values->at(i)->columnType.length);
-        offset += insert->values->at(i)->columnType.length;
+    switch (table_info.value_type_[i].GetType()) {
+      case spdb::CloumType::CHAR:
+        memcpy(src + offset, insert->values->at(i)->getName(),
+               table_info.value_type_[i].GetSize());
+        offset += table_info.value_type_[i].GetSize();
         break;
-      case hsql::DataType::INT:
-        memcpy(src + offset, insert->columns->at(i), sizeof(int));
+      case spdb::CloumType::INT:
+        memcpy(src + offset, (char *)&insert->values->at(i)->ival, sizeof(int));
         offset += sizeof(int);
         break;
       default:
@@ -41,10 +41,18 @@ ValueExecutor::ValueExecutor(Catalog *catalog, hsql::SQLStatement *state)
   Tuple t{table_info.value_type_};
   t.SetValues(src);
   free(src);
+  values_.push(t);
 }
 
 ValueExecutor::~ValueExecutor() {}
 
-auto ValueExecutor::Next(Tuple *tuple, RID *rid) -> bool {}
+auto ValueExecutor::Next(Tuple *tuple, RID *rid) -> bool {
+  if (values_.empty()) {
+    return false;
+  }
+  *tuple = values_.front();
+  values_.pop();
+  return true;
+}
 
 }  // namespace spdb
