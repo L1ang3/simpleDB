@@ -3,6 +3,7 @@ add_library(
     OBJECT
     seq_scan_executor.cpp
     value_executor.cpp
+    projection_executor.cpp
     )
 
 set(ALL_OBJECT_FILES

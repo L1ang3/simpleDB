@@ -10,6 +10,7 @@
 #include "config/catalog.h"
 #include "config/config.h"
 #include "disk/tuple.h"
+#include "executor/projection_executor.h"
 #include "executor/seq_scan_executor.h"
 #include "executor/value_executor.h"
 #include "table/b_plus_tree.h"
@@ -136,6 +137,10 @@ int main() {
       if (statement->isType(hsql::kStmtSelect)) {
         const auto* select =
             static_cast<const hsql::SelectStatement*>(statement);
+        auto t = select->selectList->at(0)->type;
+        auto n = select->selectList->at(0)->name;
+        auto l = select->selectList->at(0)->ival;
+        auto is = select->selectList->at(0)->isLiteral();
         if (!catalog.IsExisted(select->fromTable->getName())) {
           std::cerr << "table is not existed." << std::endl;
           continue;
