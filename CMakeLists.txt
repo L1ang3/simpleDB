@@ -10,6 +10,12 @@ set(CMAKE_BUILD_TYPE Debug)
 # 声明你的项目名称
 project(SIMPLEDB)
 
+# 初始化sql-parser
+execute_process(
+    COMMAND make
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/third_party/sql-parser/src
+)
+
 # 设置可执行文件的输出目录
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
