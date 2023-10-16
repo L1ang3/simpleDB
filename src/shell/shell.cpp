@@ -137,31 +137,27 @@ int main() {
       if (statement->isType(hsql::kStmtSelect)) {
         const auto* select =
             static_cast<const hsql::SelectStatement*>(statement);
-        auto t = select->selectList->at(0)->type;
-        auto n = select->selectList->at(0)->name;
-        auto l = select->selectList->at(0)->ival;
-        auto is = select->selectList->at(0)->isLiteral();
         if (!catalog.IsExisted(select->fromTable->getName())) {
           std::cerr << "table is not existed." << std::endl;
           continue;
         }
-        spdb::SeqScanExecutor seq_executor(&catalog, statement);
+        spdb::ProjectionExecutor projection_executor(&catalog, statement);
 
         TableWriter writer;
         std::vector<std::string> header;
-        auto table_info = catalog.GetTable(select->fromTable->getName());
-        for (auto& c : table_info.value_type_) {
+        auto value_type = projection_executor.GetOutputCols();
+        for (auto& c : value_type) {
           header.push_back(c.cloum_name_);
         }
         writer.AddHeader(header);
 
-        spdb::Tuple tuple{table_info.value_type_};
+        spdb::Tuple tuple{value_type};
         spdb::RID rid{};
-        while (seq_executor.Next(&tuple, &rid)) {
+        while (projection_executor.Next(&tuple, &rid)) {
           std::vector<std::string> row{};
           std::string str{};
-          for (size_t i = 0; i < table_info.value_type_.size(); ++i) {
-            switch (table_info.value_type_[i].GetType()) {
+          for (size_t i = 0; i < value_type.size(); ++i) {
+            switch (value_type[i].GetType()) {
               case spdb::CloumType::INT:
                 row.push_back(std::to_string(*tuple.GetValueAtAs<int>(i)));
                 break;

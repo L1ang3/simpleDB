@@ -13,20 +13,20 @@ ValueExecutor::ValueExecutor(Catalog *catalog, const hsql::SQLStatement *state)
     throw std::runtime_error("table is not existed.");
   }
 
-  auto table_info = catalog->GetTable(insert->tableName);
+  table_info_ = catalog->GetTable(insert->tableName);
   size_t value_size{0};
-  for (auto &c : table_info.value_type_) {
+  for (auto &c : table_info_.value_type_) {
     value_size += c.GetSize();
   }
   auto src = (char *)malloc(value_size);
   memset(src, '\0', value_size);
   size_t offset = 0;
-  for (size_t i = 0; i < table_info.value_type_.size(); ++i) {
-    switch (table_info.value_type_[i].GetType()) {
+  for (size_t i = 0; i < table_info_.value_type_.size(); ++i) {
+    switch (table_info_.value_type_[i].GetType()) {
       case spdb::CloumType::CHAR:
         memcpy(src + offset, insert->values->at(i)->getName(),
-               table_info.value_type_[i].GetSize());
-        offset += table_info.value_type_[i].GetSize();
+               table_info_.value_type_[i].GetSize());
+        offset += table_info_.value_type_[i].GetSize();
         break;
       case spdb::CloumType::INT:
         memcpy(src + offset, (char *)&insert->values->at(i)->ival, sizeof(int));
@@ -38,10 +38,14 @@ ValueExecutor::ValueExecutor(Catalog *catalog, const hsql::SQLStatement *state)
     }
   }
 
-  Tuple t{table_info.value_type_};
+  Tuple t{table_info_.value_type_};
   t.SetValues(src);
   free(src);
   values_.push(t);
+}
+
+auto ValueExecutor::GetOutputCols() -> std::vector<Cloum> {
+  return table_info_.value_type_;
 }
 
 ValueExecutor::~ValueExecutor() {}

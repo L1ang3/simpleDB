@@ -12,18 +12,22 @@ SeqScanExecutor::SeqScanExecutor(Catalog *catalog,
   if (!catalog->IsExisted(select->fromTable->getName())) {
     throw std::runtime_error("table is not existed.");
   }
-  auto table_info = catalog->GetTable(select->fromTable->getName());
-  disk_ = new DiskManager(table_info.disk_name_);
+  table_info_ = catalog->GetTable(select->fromTable->getName());
+  disk_ = new DiskManager(table_info_.disk_name_);
   bpm_ = new BufferPoolManager(BUFFER_POOL_SIZE, disk_);
-  BPlusTree table(bpm_, table_info.key_type_, table_info.value_type_,
-                  table_info.leaf_max_size_, table_info.internal_max_size_,
-                  table_info.root_id_);
+  BPlusTree table(bpm_, table_info_.key_type_, table_info_.value_type_,
+                  table_info_.leaf_max_size_, table_info_.internal_max_size_,
+                  table_info_.root_id_);
   table_iterator_ = table.Begin();
 }
 
 SeqScanExecutor::~SeqScanExecutor() {
   delete disk_;
   delete bpm_;
+}
+
+auto SeqScanExecutor::GetOutputCols() -> std::vector<Cloum> {
+  return table_info_.value_type_;
 }
 
 auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {

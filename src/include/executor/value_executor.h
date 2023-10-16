@@ -12,7 +12,10 @@ class ValueExecutor : public AbstractExecutor {
 
   auto Next(Tuple *tuple, RID *rid) -> bool override;
 
+  auto GetOutputCols() -> std::vector<Cloum> override;
+
  private:
+  TableInfo table_info_;
   std::queue<Tuple> values_;
 };
 }  // namespace spdb

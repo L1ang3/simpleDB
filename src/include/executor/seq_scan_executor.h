@@ -17,7 +17,10 @@ class SeqScanExecutor : public AbstractExecutor {
 
   auto Next(Tuple *tuple, RID *rid) -> bool override;
 
+  auto GetOutputCols() -> std::vector<Cloum> override;
+
  private:
+  TableInfo table_info_;
   Iterator table_iterator_;
   DiskManager *disk_;
   BufferPoolManager *bpm_;

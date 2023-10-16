@@ -41,8 +41,8 @@ make
 CREATE TABLE users (id INT, name CHAR(255));
 
 -- 插入数据
-INSERT INTO users (id, name) VALUES (1, 'John');
-INSERT INTO users (id, name) VALUES (2, 'Alice');
+INSERT INTO users VALUES (1, 'John');
+INSERT INTO users VALUES (2, 'Alice');
 
 -- 查询数据
 SELECT * FROM users;

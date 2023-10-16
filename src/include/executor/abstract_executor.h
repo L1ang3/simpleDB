@@ -12,6 +12,8 @@ class AbstractExecutor {
 
   virtual auto Next(Tuple *tuple, RID *rid) -> bool = 0;
 
+  virtual auto GetOutputCols() -> std::vector<Cloum> = 0;
+
  private:
   Catalog *catalog_;
 };
